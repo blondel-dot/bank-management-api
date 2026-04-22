@@ -1,106 +1,97 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
-const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
 const app = express();
-app.get('/verif', (req, res) => res.send("Version du 22 Avril - 02h25"));
 app.use(express.json());
 
+// Bases de données temporaires
 let accounts = [];
+let transactions = [];
 
-// --- CONFIGURATION SWAGGER STATIQUE (SÛRE À 100%) ---
+// --- DÉFINITION STATIQUE POUR SWAGGER ---
 const swaggerDefinition = {
     openapi: '3.0.0',
     info: {
-        title: 'Bank API - Ange',
-        version: '1.0.0',
-        description: 'Gestion de comptes et transferts',
+        title: 'Système de Gestion Bancaire - Ange',
+        version: '2.0.0',
+        description: 'API complète : Comptes, Transferts et Historique'
     },
-    servers: [
-        { url: 'https://bank-management-api-bbdp.onrender.com', description: 'Serveur Render' },
-        { url: 'http://localhost:3000', description: 'Local' }
-    ],
+    servers: [{ url: 'https://bank-management-api-bbdp.onrender.com' }, { url: 'http://localhost:3000' }],
     paths: {
         '/accounts': {
             post: {
-                summary: 'Créer un compte',
+                summary: '1. Créer un compte',
+                requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { owner: {type: 'string'}, balance: {type: 'number'} } } } } },
                 responses: { 201: { description: 'Compte créé' } }
             },
             get: {
-                summary: 'Lister les comptes',
+                summary: '2. Lister tous les comptes',
                 responses: { 200: { description: 'Succès' } }
+            }
+        },
+        '/accounts/{id}': {
+            get: {
+                summary: '3. Consulter un compte spécifique',
+                parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+                responses: { 200: { description: 'Détails du compte' }, 404: { description: 'Non trouvé' } }
             }
         },
         '/transfer': {
             post: {
-                summary: 'Effectuer un transfert',
-                responses: { 200: { description: 'Transfert réussi' } }
+                summary: '4. Effectuer un virement',
+                requestBody: { content: { 'application/json': { schema: { type: 'object', properties: { fromId: {type: 'string'}, toId: {type: 'string'}, amount: {type: 'number'} } } } } },
+                responses: { 200: { description: 'Transfert réussi' }, 400: { description: 'Erreur' } }
+            }
+        },
+        '/transactions': {
+            get: {
+                summary: '5. Historique des transactions',
+                responses: { 200: { description: 'Liste des transferts' } }
             }
         }
     }
 };
 
-// On n'utilise plus swaggerJsDoc ici, on passe directement la définition
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDefinition));
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-/**
- * @openapi
- * /accounts:
- * post:
- * summary: Créer un nouveau compte
- * responses:
- * 201:
- * description: Compte créé avec succès
- * get:
- * summary: Liste tous les comptes
- * responses:
- * 200:
- * description: Succès
- * * /transfer:
- * post:
- * summary: Effectuer un transfert
- * responses:
- * 200:
- * description: Transfert réussi
- */
+// --- LOGIQUE DES FONCTIONS ---
 
+// 1 & 2. Comptes
 app.post('/accounts', (req, res) => {
-    const { owner, balance } = req.body;
-    const newAccount = { id: uuidv4(), owner, balance: balance || 0 };
-    accounts.push(newAccount);
-    res.status(201).json(newAccount);
+    const account = { id: uuidv4(), owner: req.body.owner, balance: req.body.balance || 0 };
+    accounts.push(account);
+    res.status(201).json(account);
 });
 
 app.get('/accounts', (req, res) => res.json(accounts));
 
-// LE PORT DYNAMIQUE (Très important pour Render !)
-const PORT = process.env.PORT || 3000;
-// Route pour transférer de l'argent
+// 3. Consulter un compte
+app.get('/accounts/:id', (req, res) => {
+    const account = accounts.find(a => a.id === req.params.id);
+    account ? res.json(account) : res.status(404).json({error: "Introuvable"});
+});
+
+// 4. Transfert avec validation
 app.post('/transfer', (req, res) => {
     const { fromId, toId, amount } = req.body;
+    const from = accounts.find(a => a.id === fromId);
+    const to = accounts.find(a => a.id === toId);
+
+    if (!from || !to) return res.status(404).json({error: "Compte(s) introuvable(s)"});
+    if (from.balance < amount) return res.status(400).json({error: "Solde insuffisant"});
+
+    from.balance -= amount;
+    to.balance += amount;
     
-    const sender = accounts.find(a => a.id === fromId);
-    const receiver = accounts.find(a => a.id === toId);
-
-    if (!sender || !receiver) {
-        return res.status(404).json({ error: "Compte non trouvé" });
-    }
-
-    if (sender.balance < amount) {
-        return res.status(400).json({ error: "Solde insuffisant" });
-    }
-
-    sender.balance -= amount;
-    receiver.balance += amount;
-
-    res.json({ message: "Transfert réussi !", sender, receiver });
+    const record = { id: uuidv4(), from: from.owner, to: to.owner, amount, date: new Date() };
+    transactions.push(record);
+    
+    res.json({ message: "Virement réussi", transaction: record });
 });
-app.get('/', (req, res) => {
-  res.send("Bienvenue sur l'API Bank Management ! Allez sur /api-docs pour la doc.");
-});
-app.listen(PORT, () => {
-    console.log(`✅ Serveur prêt sur le port ${PORT}`);
-});
+
+// 5. Historique
+app.get('/transactions', (req, res) => res.json(transactions));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Serveur sur port ${PORT}`));
