@@ -51,6 +51,9 @@ app.post('/transfer', (req, res) => {
 
     res.json({ message: "Transfert réussi !", sender, receiver });
 });
+app.get('/', (req, res) => {
+  res.send("Bienvenue sur l'API Bank Management ! Allez sur /api-docs pour la doc.");
+});
 app.listen(PORT, () => {
     console.log(`✅ Serveur prêt sur le port ${PORT}`);
 });
