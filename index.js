@@ -19,19 +19,26 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
 /**
- * @swagger
+ * @openapi
  * /accounts:
+ * post:
+ * summary: Créer un nouveau compte
+ * responses:
+ * 201:
+ * description: Compte créé avec succès
  * get:
  * summary: Liste tous les comptes
  * responses:
  * 200:
  * description: Succès
+ * * /transfer:
  * post:
- * summary: Créer un nouveau compte
+ * summary: Effectuer un transfert
  * responses:
- * 201:
- * description: Compte créé
+ * 200:
+ * description: Transfert réussi
  */
 
 app.post('/accounts', (req, res) => {
