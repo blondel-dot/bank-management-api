@@ -19,6 +19,25 @@ const swaggerDefinition = {
     },
     servers: [{ url: 'https://bank-management-api-bbdp.onrender.com' }, { url: 'http://localhost:3000' }],
     paths: {
+        '/accounts/delete': {
+            post: {
+                summary: '6. Supprimer un compte',
+                requestBody: { 
+                    content: { 
+                        'application/json': { 
+                            schema: { 
+                                type: 'object', 
+                                properties: { id: { type: 'string' } } 
+                            } 
+                        } 
+                    } 
+                },
+                responses: {
+                    200: { description: 'Succès' },
+                    404: { description: 'Non trouvé' }
+                }
+            }
+        }
         '/accounts': {
             post: {
                 summary: '1. Créer un compte',
@@ -94,4 +113,16 @@ app.post('/transfer', (req, res) => {
 app.get('/transactions', (req, res) => res.json(transactions));
 
 const PORT = process.env.PORT || 3000;
+// 6. Supprimer un compte
+app.post('/accounts/delete', (req, res) => {
+    const { id } = req.body;
+    const index = accounts.findIndex(a => a.id === id);
+
+    if (index === -1) {
+        return res.status(404).json({ error: "Compte introuvable" });
+    }
+
+    const deletedAccount = accounts.splice(index, 1);
+    res.json({ message: "Compte supprimé avec succès", account: deletedAccount[0] });
+});
 app.listen(PORT, () => console.log(`Serveur sur port ${PORT}`));
