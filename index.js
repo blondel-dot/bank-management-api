@@ -12,7 +12,10 @@ const swaggerOptions = {
     swaggerDefinition: {
         openapi: '3.0.0',
         info: { title: 'Bank API', version: '1.0.0' },
-        servers: [{ url: 'http://localhost:3000' }]
+        servers: [
+            { url: 'https://bank-management-api-bbdp.onrender.com' }, // Ton lien Render
+            { url: 'http://localhost:3000' }
+        ]
     },
     apis: ['./index.js']
 };
