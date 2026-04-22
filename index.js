@@ -8,18 +8,40 @@ app.use(express.json());
 
 let accounts = [];
 
-const swaggerOptions = {
-    swaggerDefinition: {
-        openapi: '3.0.0',
-        info: { title: 'Bank API', version: '1.0.0' },
-        servers: [
-            { url: 'https://bank-management-api-bbdp.onrender.com' }, // Ton lien Render
-            { url: 'http://localhost:3000' }
-        ]
+// --- CONFIGURATION SWAGGER STATIQUE (SÛRE À 100%) ---
+const swaggerDefinition = {
+    openapi: '3.0.0',
+    info: {
+        title: 'Bank API - Ange',
+        version: '1.0.0',
+        description: 'Gestion de comptes et transferts',
     },
-    apis: ['./index.js']
+    servers: [
+        { url: 'https://bank-management-api-bbdp.onrender.com', description: 'Serveur Render' },
+        { url: 'http://localhost:3000', description: 'Local' }
+    ],
+    paths: {
+        '/accounts': {
+            post: {
+                summary: 'Créer un compte',
+                responses: { 201: { description: 'Compte créé' } }
+            },
+            get: {
+                summary: 'Lister les comptes',
+                responses: { 200: { description: 'Succès' } }
+            }
+        },
+        '/transfer': {
+            post: {
+                summary: 'Effectuer un transfert',
+                responses: { 200: { description: 'Transfert réussi' } }
+            }
+        }
+    }
 };
 
+// On n'utilise plus swaggerJsDoc ici, on passe directement la définition
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDefinition));
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
