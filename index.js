@@ -4,6 +4,7 @@ const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
 
 const app = express();
+app.get('/verif', (req, res) => res.send("Version du 22 Avril - 02h25"));
 app.use(express.json());
 
 let accounts = [];
