@@ -19,6 +19,20 @@ const swaggerOptions = {
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+/**
+ * @swagger
+ * /accounts:
+ * get:
+ * summary: Liste tous les comptes
+ * responses:
+ * 200:
+ * description: Succès
+ * post:
+ * summary: Créer un nouveau compte
+ * responses:
+ * 201:
+ * description: Compte créé
+ */
 
 app.post('/accounts', (req, res) => {
     const { owner, balance } = req.body;
